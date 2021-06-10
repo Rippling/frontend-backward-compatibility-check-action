@@ -1,0 +1,9 @@
+name: "Check open PRs for backward compatibility"
+description: "When a merge is made to master, The open PRs must be validated for backward compatibility"
+runs:
+  using: "docker"
+  image: "Dockerfile"
+
+branding:
+  icon: "git-pull-request"
+  color: "blue"
