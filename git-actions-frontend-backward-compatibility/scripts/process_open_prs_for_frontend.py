@@ -59,10 +59,10 @@ def get_output_line_dict_from_PR_dict(pr_dict, repository):
 
 
 def get_query_to_fetch_frontend_prs_created_after(repository, time_from):
-    logging.info("Getting the query for rippling-webapp to get PRs created after: {}".format(time_from))
+    logging.info("Getting the query for {} to get PRs created after: {}".format(repository, time_from))
     query = '''
                 {
-                  search(query: "repo:rippling/%s is:pr is:open created:>%s sort:created-asc", type: ISSUE, last: 100) {
+                  search(query: "repo:rippling/%s is:pr is:open created:>=%s sort:created-asc", type: ISSUE, last: 100) {
                     edges {
                       node {
                         ... on PullRequest {
@@ -80,8 +80,8 @@ def get_query_to_fetch_frontend_prs_created_after(repository, time_from):
 
 def process_open_prs(repository):
     while True:
-        merged_after = (datetime.today() - timedelta(days=7)).strftime('%Y-%m-%d')
-        data = get_pr_data_from_github(repository, merged_after)
+        created_after = (datetime.today() - timedelta(days=7)).strftime('%Y-%m-%d')
+        data = get_pr_data_from_github(repository, created_after)
 
         pull_requests_edges = data['data']['search']['edges']
 
@@ -98,7 +98,8 @@ def process_open_prs(repository):
 
 if __name__ == "__main__":
     try:
-        process_open_prs("deployment-scripts")
+        frontend_repository = os.getenv("FRONTEND_REPOSITORY")
+        process_open_prs(frontend_repository)
     except:
         logging.exception("Failed to PR stats.")
         raise
