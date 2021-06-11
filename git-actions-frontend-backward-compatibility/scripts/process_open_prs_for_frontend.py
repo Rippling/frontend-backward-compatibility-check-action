@@ -94,7 +94,7 @@ def process_open_prs(repository):
             pr_number = pr['number']
             logging.info("Triggering build for pr: {}".format(pr_number))
             trigger_jenkins_release_validator_job_for_pr(pr_number)
-            created_after = edge['createdAt']
+            created_after = edge['node']['createdAt']
 
 
 if __name__ == "__main__":
