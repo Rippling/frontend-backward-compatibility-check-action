@@ -1,4 +1,4 @@
-#Frontend Backward Compatibility Check On PRs
+# Frontend Backward Compatibility Check On PRs
 
 Checks if a PR needs a rebase with master after a merge in master.
 
