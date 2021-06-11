@@ -62,7 +62,7 @@ def get_query_to_fetch_frontend_prs_created_after(repository, time_from):
     logging.info("Getting the query for {} to get PRs created after: {}".format(repository, time_from))
     query = '''
                 {
-                  search(query: "repo:rippling/%s is:pr is:open created:>=%s sort:created-asc", type: ISSUE, last: 100) {
+                  search(query: "repo:rippling/%s is:pr is:open created:>%s sort:created-asc", type: ISSUE, last: 100) {
                     edges {
                       node {
                         ... on PullRequest {
@@ -79,8 +79,8 @@ def get_query_to_fetch_frontend_prs_created_after(repository, time_from):
 
 
 def process_open_prs(repository):
+    created_after = (datetime.today() - timedelta(days=8)).strftime('%Y-%m-%d')
     while True:
-        created_after = (datetime.today() - timedelta(days=7)).strftime('%Y-%m-%d')
         data = get_pr_data_from_github(repository, created_after)
 
         pull_requests_edges = data['data']['search']['edges']
@@ -94,6 +94,7 @@ def process_open_prs(repository):
             pr_number = pr['number']
             logging.info("Triggering build for pr: {}".format(pr_number))
             trigger_jenkins_release_validator_job_for_pr(pr_number)
+            created_after = edge['createdAt']
 
 
 if __name__ == "__main__":
