@@ -3,7 +3,7 @@ import os
 import requests
 from datetime import datetime, timedelta
 from requests.auth import HTTPBasicAuth
-from multiprocessing import Pool
+from multiprocessing import Pool, cpu_count
 import time
 
 start_time = time.time()
@@ -19,13 +19,12 @@ def get_jenkins_job_url_for_pr(pr_number, job_name):
 def trigger_jenkins_release_validator_job_for_pr(edge):
     pr = edge['node']
     pr_number = pr['number']
-    logging.info("Triggering build for pr: {}".format(pr_number))
     job_name = os.getenv("FRONTEND_RELEASE_VALIDATOR_JOB")
     url = get_jenkins_job_url_for_pr(pr_number, job_name)
+    logging.info("Triggering build for pr: {}".format(url))
     jenkins_api_user = os.getenv("JENKINS_API_USER")
     jenkins_api_token = os.getenv("JENKINS_API_TOKEN")
     auth = HTTPBasicAuth(jenkins_api_user, jenkins_api_token)
-    print(url)
     return requests.post(url=url, auth=auth)
 
 
@@ -74,6 +73,7 @@ def get_query_to_fetch_frontend_prs_created_after(repository, time_from):
                       node {
                         ... on PullRequest {
                           createdAt,
+                          updatedAt,
                           number,
                           url
                         }
@@ -85,14 +85,14 @@ def get_query_to_fetch_frontend_prs_created_after(repository, time_from):
     return query
 
 def parallel_process_prs(pull_requests_edges):
-    pool = Pool(processes=10)
+    pool = Pool(processes=cpu_count())
     pool.map(trigger_jenkins_release_validator_job_for_pr, pull_requests_edges)
 
 def process_open_prs(repository):
-    created_after = (datetime.today() - timedelta(days=16)).strftime('%Y-%m-%d')
+    updated_after = (datetime.today() - timedelta(days=16)).strftime('%Y-%m-%d')
     all_pull_requests_edges = []
     while True:
-        data = get_pr_data_from_github(repository, created_after)
+        data = get_pr_data_from_github(repository, updated_after)
 
         pull_requests_edges = data['data']['search']['edges']
 
@@ -100,9 +100,7 @@ def process_open_prs(repository):
             logging.info("No more open PRs to be processed.")
             break
         all_pull_requests_edges.extend(pull_requests_edges)
-        created_after = pull_requests_edges[len(pull_requests_edges)-1]
-
-    print(all_pull_requests_edges)
+        updated_after = pull_requests_edges[len(pull_requests_edges) - 1]['node']['updatedAt']
     parallel_process_prs(all_pull_requests_edges)
 
 if __name__ == "__main__":
