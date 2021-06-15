@@ -83,9 +83,11 @@ def get_query_to_fetch_frontend_prs_created_after(repository, time_from):
             ''' % (repository, time_from)
     return query
 
+
 def parallel_process_prs(pull_requests_edges):
     pool = Pool(processes=cpu_count())
     pool.map(trigger_jenkins_release_validator_job_for_pr, pull_requests_edges)
+
 
 def process_open_prs(repository):
     created_after = (datetime.today() - timedelta(days=16)).strftime('%Y-%m-%d')
@@ -99,8 +101,11 @@ def process_open_prs(repository):
             logging.info("No more open PRs to be processed.")
             break
         all_pull_requests_edges.extend(pull_requests_edges)
-        created_after = pull_requests_edges[len(pull_requests_edges) - 1]['node']['createdAt']
+        last_fetched_pr = pull_requests_edges[len(pull_requests_edges) - 1]['node']
+        created_after = last_fetched_pr['createdAt']
+    print("Total number of open PRs to check for backward compatibility: {}".format(len(all_pull_requests_edges)))
     parallel_process_prs(all_pull_requests_edges)
+
 
 if __name__ == "__main__":
     try:
