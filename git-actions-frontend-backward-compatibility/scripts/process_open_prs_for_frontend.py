@@ -68,12 +68,11 @@ def get_query_to_fetch_frontend_prs_created_after(repository, time_from):
     logging.info("Getting the query for {} to get PRs created after: {}".format(repository, time_from))
     query = '''
                 {
-                  search(query: "repo:rippling/%s is:pr is:open updated:>%s sort:updated-asc", type: ISSUE, last: 100) {
+                  search(query: "repo:rippling/%s is:pr is:open created:>%s sort:created-asc", type: ISSUE, last: 100) {
                     edges {
                       node {
                         ... on PullRequest {
                           createdAt,
-                          updatedAt,
                           number,
                           url
                         }
@@ -89,10 +88,10 @@ def parallel_process_prs(pull_requests_edges):
     pool.map(trigger_jenkins_release_validator_job_for_pr, pull_requests_edges)
 
 def process_open_prs(repository):
-    updated_after = (datetime.today() - timedelta(days=16)).strftime('%Y-%m-%d')
+    created_after = (datetime.today() - timedelta(days=16)).strftime('%Y-%m-%d')
     all_pull_requests_edges = []
     while True:
-        data = get_pr_data_from_github(repository, updated_after)
+        data = get_pr_data_from_github(repository, created_after)
 
         pull_requests_edges = data['data']['search']['edges']
 
@@ -100,7 +99,7 @@ def process_open_prs(repository):
             logging.info("No more open PRs to be processed.")
             break
         all_pull_requests_edges.extend(pull_requests_edges)
-        updated_after = pull_requests_edges[len(pull_requests_edges) - 1]['node']['updatedAt']
+        created_after = pull_requests_edges[len(pull_requests_edges) - 1]['node']['createdAt']
     parallel_process_prs(all_pull_requests_edges)
 
 if __name__ == "__main__":
