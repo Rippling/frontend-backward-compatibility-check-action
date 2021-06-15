@@ -79,7 +79,7 @@ def get_query_to_fetch_frontend_prs_created_after(repository, time_from):
 
 
 def process_open_prs(repository):
-    created_after = (datetime.today() - timedelta(days=8)).strftime('%Y-%m-%d')
+    created_after = (datetime.today() - timedelta(days=16)).strftime('%Y-%m-%d')
     while True:
         data = get_pr_data_from_github(repository, created_after)
 
