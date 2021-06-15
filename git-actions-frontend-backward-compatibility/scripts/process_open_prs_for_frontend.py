@@ -85,7 +85,9 @@ def get_query_to_fetch_frontend_prs_created_after(repository, time_from):
 
 
 def parallel_process_prs(pull_requests_edges):
-    pool = Pool(processes=cpu_count())
+    no_of_processes = cpu_count()
+    print("Total number of parallel processes: {}".format(no_of_processes))
+    pool = Pool(processes=no_of_processes)
     pool.map(trigger_jenkins_release_validator_job_for_pr, pull_requests_edges)
 
 
