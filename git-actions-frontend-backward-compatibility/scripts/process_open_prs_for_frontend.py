@@ -11,7 +11,8 @@ start_time = time.time()
 logging.getLogger().setLevel(logging.INFO)
 
 def trigger_backward_compatibility_check_workflow_for_pr(edge):
-    url = 'https://api.github.com/repos/Rippling/deployment_scripts/actions/workflows/10278845/dispatches'
+    github_action_id = os.getenv('GITHUB_ACTION_ID')
+    url = 'https://api.github.com/repos/Rippling/deployment_scripts/actions/workflows/{}/dispatches'.format(github_action_id)
     pr = edge['node']
     branch_name = pr['headRefName']
     logging.info("Triggering build for pr: {}".format(url))
@@ -22,6 +23,7 @@ def trigger_backward_compatibility_check_workflow_for_pr(edge):
     response = requests.post(url=url, json=json, headers=headers)
     if not response.ok:
         logging.error("Error while triggering backward compatibility check workflow for branch {}".format(branch_name))
+        logging.error(response.content)
     return response
 
 
