@@ -16,7 +16,7 @@ def trigger_backward_compatibility_check_workflow_for_pr(edge):
     pr = edge['node']
     branch_name = pr['headRefName']
     logging.info("Triggering build for pr: {}".format(url))
-    api_token = os.getenv("JENKINS_GIT_ACCESS_TOKEN")
+    api_token = os.getenv("GIT_ACCESS_TOKEN")
     json = {"ref": branch_name}
     headers = {'Authorization': 'token {}'.format(api_token)}
     logging.info("Triggering workflow for branch {}".format(branch_name))
@@ -29,7 +29,7 @@ def trigger_backward_compatibility_check_workflow_for_pr(edge):
 
 def get_pr_data_from_github(repository, today):
     url = 'https://api.github.com/graphql'
-    api_token = os.getenv("JENKINS_GIT_ACCESS_TOKEN")
+    api_token = os.getenv("GIT_ACCESS_TOKEN")
     headers = {'Authorization': 'token {}'.format(api_token)}
     json = {'query': get_query_to_fetch_frontend_prs_created_after(repository, today)}
     r = requests.post(url=url, json=json, headers=headers)
