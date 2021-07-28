@@ -107,13 +107,11 @@ def process_open_prs(repository):
     parallel_process_prs(all_pull_requests_edges)
 
 
-# if __name__ == "__main__":
-#     try:
-#         frontend_repository = os.getenv("FRONTEND_REPOSITORY")
-#         process_open_prs(frontend_repository)
-#         print("--- %s seconds ---" % (time.time() - start_time))
-#     except:
-#         logging.exception("Failed to PR stats.")
-#         raise
-
-trigger_backward_compatibility_check_workflow_for_pr({'node': {'headRefName': 'learn_github_actions'}})
+if __name__ == "__main__":
+    try:
+        frontend_repository = os.getenv("FRONTEND_REPOSITORY")
+        process_open_prs(frontend_repository)
+        print("--- %s seconds ---" % (time.time() - start_time))
+    except:
+        logging.exception("Failed to PR stats.")
+        raise
