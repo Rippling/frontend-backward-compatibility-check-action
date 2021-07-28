@@ -10,27 +10,26 @@ start_time = time.time()
 
 logging.getLogger().setLevel(logging.INFO)
 
-
-def get_jenkins_job_url_for_pr(pr_number, job_name):
-    JENKINS_URL = os.getenv("JENKINS_URL")
-    return "{}job/{}/job/PR-{}/build".format(JENKINS_URL, job_name, pr_number)
-
-
-def trigger_jenkins_release_validator_job_for_pr(edge):
+def trigger_backward_compatibility_check_workflow_for_pr(edge):
+    github_action_id = os.getenv('GITHUB_ACTION_ID')
+    url = 'https://api.github.com/repos/Rippling/deployment_scripts/actions/workflows/{}/dispatches'.format(github_action_id)
     pr = edge['node']
-    pr_number = pr['number']
-    job_name = os.getenv("FRONTEND_RELEASE_VALIDATOR_JOB")
-    url = get_jenkins_job_url_for_pr(pr_number, job_name)
+    branch_name = pr['headRefName']
     logging.info("Triggering build for pr: {}".format(url))
-    jenkins_api_user = os.getenv("JENKINS_API_USER")
-    jenkins_api_token = os.getenv("JENKINS_API_TOKEN")
-    auth = HTTPBasicAuth(jenkins_api_user, jenkins_api_token)
-    return requests.post(url=url, auth=auth)
+    api_token = os.getenv("GIT_ACCESS_TOKEN")
+    json = {"ref": branch_name}
+    headers = {'Authorization': 'token {}'.format(api_token)}
+    logging.info("Triggering workflow for branch {}".format(branch_name))
+    response = requests.post(url=url, json=json, headers=headers)
+    if not response.ok:
+        logging.error("Error while triggering backward compatibility check workflow for branch {}".format(branch_name))
+        logging.error(response.content)
+    return response
 
 
 def get_pr_data_from_github(repository, today):
     url = 'https://api.github.com/graphql'
-    api_token = os.getenv("JENKINS_GIT_ACCESS_TOKEN")
+    api_token = os.getenv("GIT_ACCESS_TOKEN")
     headers = {'Authorization': 'token {}'.format(api_token)}
     json = {'query': get_query_to_fetch_frontend_prs_created_after(repository, today)}
     r = requests.post(url=url, json=json, headers=headers)
@@ -72,9 +71,8 @@ def get_query_to_fetch_frontend_prs_created_after(repository, time_from):
                     edges {
                       node {
                         ... on PullRequest {
-                          createdAt,
-                          number,
-                          url
+                          headRefName,
+                          createdAt
                         }
                       }
                     }
@@ -88,7 +86,7 @@ def parallel_process_prs(pull_requests_edges):
     no_of_processes = cpu_count()
     print("Total number of parallel processes: {}".format(no_of_processes))
     pool = Pool(processes=no_of_processes)
-    pool.map(trigger_jenkins_release_validator_job_for_pr, pull_requests_edges)
+    pool.map(trigger_backward_compatibility_check_workflow_for_pr, pull_requests_edges)
 
 
 def process_open_prs(repository):
