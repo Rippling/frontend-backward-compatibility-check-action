@@ -22,10 +22,7 @@ jobs:
         uses: Rippling/frontend-backward-compatibility-check-action@master
         env:
           FRONTEND_REPOSITORY: "rippling-webapp"
-          JENKINS_API_USER: "${{ secrets.JENKINS_API_USER }}"
-          JENKINS_API_TOKEN: "${{ secrets.JENKINS_API_TOKEN }}"
-          JENKINS_URL: "${{ secrets.JENKINS_URL }}"
-          JENKINS_GIT_ACCESS_TOKEN:  "${{ secrets.JENKINS_GIT_ACCESS_TOKEN }}"
-          FRONTEND_RELEASE_VALIDATOR_JOB: "<JENKINS_JOB_NAME>"
+          GITHUB_ACTION_ID: "<action-id>"
+          GIT_ACCESS_TOKEN:  "${{ secrets.JENKINS_GIT_ACCESS_TOKEN }}"
 
 ```
