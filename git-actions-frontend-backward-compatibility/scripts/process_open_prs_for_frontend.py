@@ -16,7 +16,8 @@ def trigger_backward_compatibility_check_workflow_for_pr(edge):
     url = 'https://api.github.com/repos/Rippling/{}/actions/workflows/{}/dispatches'.format(repository, github_action_id)
     pr = edge['node']
     branch_name = pr['headRefName']
-    logging.info("Triggering build for pr: {}".format(url))
+    pr_number = pr['number']
+    logging.info("Triggering build for pr: {}".format(pr_number))
     api_token = os.getenv("GIT_ACCESS_TOKEN")
     json = {"ref": branch_name}
     headers = {'Authorization': 'token {}'.format(api_token)}
@@ -72,6 +73,7 @@ def get_query_to_fetch_frontend_prs_created_after(repository, time_from):
                     edges {
                       node {
                         ... on PullRequest {
+                          number,
                           headRefName,
                           createdAt
                         }
