@@ -12,7 +12,8 @@ logging.getLogger().setLevel(logging.INFO)
 
 def trigger_backward_compatibility_check_workflow_for_pr(edge):
     github_action_id = os.getenv('GITHUB_ACTION_ID')
-    url = 'https://api.github.com/repos/Rippling/deployment_scripts/actions/workflows/{}/dispatches'.format(github_action_id)
+    repository = os.getenv('FRONTEND_REPOSITORY')
+    url = 'https://api.github.com/repos/Rippling/{}/actions/workflows/{}/dispatches'.format(repository, github_action_id)
     pr = edge['node']
     branch_name = pr['headRefName']
     logging.info("Triggering build for pr: {}".format(url))
