@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from requests.auth import HTTPBasicAuth
 from multiprocessing import Pool, cpu_count
 import time
+import json
 
 start_time = time.time()
 
@@ -13,21 +14,30 @@ logging.getLogger().setLevel(logging.INFO)
 def trigger_backward_compatibility_check_workflow_for_pr(edge):
     github_action_id = os.getenv('GITHUB_ACTION_ID')
     repository = os.getenv('FRONTEND_REPOSITORY')
-    url = 'https://api.github.com/repos/Rippling/{}/actions/workflows/{}/dispatches'.format(repository, github_action_id)
     pr = edge['node']
     branch_name = pr['headRefName']
-    pr_number = pr['number']
-    logging.info("Triggering build for pr: {}".format(pr_number))
     api_token = os.getenv("GIT_ACCESS_TOKEN")
-    json = {"ref": branch_name}
+    url = 'https://api.github.com/repos/Rippling/{}/actions/workflows/{}/runs?branch={}'.format(repository, github_action_id, branch_name)
     headers = {'Authorization': 'token {}'.format(api_token)}
-    logging.info("Triggering workflow for branch {}".format(branch_name))
-    response = requests.post(url=url, json=json, headers=headers)
-    if not response.ok:
-        logging.error("Error while triggering backward compatibility check workflow for branch {}".format(branch_name))
-        logging.error(response.content)
-    return response
+    logging.info("Get workflow run for branch {}".format(branch_name))
+    workflow_runs_for_branch = requests.get(url=url, headers=headers)
+    if not workflow_runs_for_branch.ok:
+        logging.error("Error while getting backward compatibility workflow for branch {}".format(branch_name))
+        logging.error(workflow_runs_for_branch.content)
+        return workflow_runs_for_branch
 
+    content = workflow_runs_for_branch.content.decode('utf-8')
+    relevent_workflow_runs = [each for each in json.loads(content)['workflow_runs'] if each['event'] == 'pull_request']
+    if len(relevent_workflow_runs) > 0:
+        last_workflow_run = relevent_workflow_runs[0]
+        url = last_workflow_run['rerun_url']
+        logging.info("Re-run last workflow run for branch {}".format(branch_name))
+        rerun_workflow_run = requests.post(url=url, headers=headers)
+        if not rerun_workflow_run.ok:
+            logging.error("Error while re-running backward compatibility workflow for branch {}".format(branch_name))
+            logging.error(rerun_workflow_run.content)
+        return rerun_workflow_run
+    return { 'branch': branch_name }
 
 def get_pr_data_from_github(repository, today):
     url = 'https://api.github.com/graphql'
@@ -93,7 +103,7 @@ def parallel_process_prs(pull_requests_edges):
 
 
 def process_open_prs(repository):
-    created_after = (datetime.today() - timedelta(days=16)).strftime('%Y-%m-%d')
+    created_after = (datetime.today() - timedelta(days=15)).strftime('%Y-%m-%d')
     all_pull_requests_edges = []
     while True:
         data = get_pr_data_from_github(repository, created_after)
